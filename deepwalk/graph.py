@@ -125,8 +125,33 @@ class Graph(defaultdict):
     "Returns the number of nodes in the graph"
     return order()
 
-  def random_walk(self, path_length, alpha=0, rand=random.Random(), start=None):
+  def random_walk(self, path_length, alpha=0, rand=random.Random(), start=None, weighted=False):
     """ Returns a truncated random walk.
+
+        path_length: Length of the random walk.
+        alpha: probability of restarts.
+        start: the start node of the random walk.
+    """
+    G = self
+    if start:
+      path = [start]
+    else:
+      # Sampling is uniform w.r.t V, and not w.r.t E
+      path = [rand.choice(G.keys())]
+
+    while len(path) < path_length:
+      cur = path[-1]
+      if len(G[cur]) > 0:
+        if rand.random() >= alpha:
+          path.append(rand.choice(G[cur]))
+        else:
+          path.append(path[0])
+      else:
+        break
+    return [str(node) for node in path]
+
+  def weighted_random_walk(self, path_length, alpha=0, rand=random.Random(), start=None):
+     """ Returns a truncated weighted random walk.
 
         path_length: Length of the random walk.
         alpha: probability of restarts.
@@ -152,7 +177,7 @@ class Graph(defaultdict):
 
 # TODO add build_walks in here
 
-def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
+def build_deepwalk_corpus(G, num_paths, path_length, weighted, alpha=0,
                       rand=random.Random(0)):
   walks = []
 
@@ -161,7 +186,7 @@ def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
   for cnt in range(num_paths):
     rand.shuffle(nodes)
     for node in nodes:
-      walks.append(G.random_walk(path_length, rand=rand, alpha=alpha, start=node))
+      walks.append(G.random_walk(path_length, rand=rand, alpha=alpha, start=node, weighted=weighted))
   
   return walks
 

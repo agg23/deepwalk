@@ -22,6 +22,8 @@ from six.moves import range
 import psutil
 from multiprocessing import cpu_count
 
+import networkx as nx
+
 p = psutil.Process(os.getpid())
 try:
     p.set_cpu_affinity(list(range(cpu_count())))
@@ -47,11 +49,15 @@ def debug(type_, value, tb):
 
 
 def process(args):
+  weighted = False
 
   if args.format == "adjlist":
     G = graph.load_adjacencylist(args.input, undirected=args.undirected)
   elif args.format == "edgelist":
     G = graph.load_edgelist(args.input, undirected=args.undirected)
+  elif args.format == "weightededgelist":
+    G = nx.read_weighted_edgelist(args.input)
+    weighted = True
   elif args.format == "mat":
     G = graph.load_matfile(args.input, variable_name=args.matfile_variable_name, undirected=args.undirected)
   else:
@@ -70,7 +76,7 @@ def process(args):
   if data_size < args.max_memory_data_size:
     print("Walking...")
     walks = graph.build_deepwalk_corpus(G, num_paths=args.number_walks,
-                                        path_length=args.walk_length, alpha=0, rand=random.Random(args.seed))
+                                        path_length=args.walk_length, weighted=weighted alpha=0, rand=random.Random(args.seed))
     print("Training...")
     model = Word2Vec(walks, size=args.representation_size, window=args.window_size, min_count=0, sg=1, hs=1, workers=args.workers)
   else:
